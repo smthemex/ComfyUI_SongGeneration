@@ -1,0 +1,223 @@
+{
+  "id": "0ee92c85-7f0b-4270-9508-3a2a39297a98",
+  "revision": 0,
+  "last_node_id": 7,
+  "last_link_id": 6,
+  "nodes": [
+    {
+      "id": 6,
+      "type": "SongGeneration_Sampler",
+      "pos": [
+        21632.9296875,
+        -1139.897705078125
+      ],
+      "size": [
+        201.78182983398438,
+        26
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "SongGeneration_DICT",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            5,
+            6
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SongGeneration_Sampler"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 3,
+      "type": "SaveAudio",
+      "pos": [
+        21864.330078125,
+        -1350.354248046875
+      ],
+      "size": [
+        270,
+        112
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 5
+        }
+      ],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "audio/ComfyUI"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "SongGeneration_Stage2",
+      "pos": [
+        21184.609375,
+        -1333.25732421875
+      ],
+      "size": [
+        419.834716796875,
+        365.28924560546875
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "SongGeneration_MODEL",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "SongGeneration_DICT",
+          "links": [
+            4
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SongGeneration_Stage2"
+      },
+      "widgets_values": [
+        "[intro-short] ;\n [verse] 雪花舞动在无尽的天际.情缘如同雪花般轻轻逝去.希望与真挚.永不磨灭.你的忧虑.随风而逝 ; [chorus] 我怀抱着守护这片梦境.在这世界中寻找爱与虚幻.苦辣酸甜.我们一起品尝.在雪的光芒中.紧紧相拥 ;\n [inst-short] ; [verse] 雪花再次在风中飘扬.情愿如同雪花般消失无踪.希望与真挚.永不消失.在痛苦与喧嚣中.你找到解脱 ;\n [chorus] 我环绕着守护这片梦境.在这世界中感受爱与虚假.苦辣酸甜.我们一起分享.在白银的光芒中.我们同在 ; \n[outro-short]",
+        "female, dark, pop, sad, piano and drums, the bpm is 125"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "SongGeneration_Stage1",
+      "pos": [
+        20832.298828125,
+        -1305.4666748046875
+      ],
+      "size": [
+        296.767578125,
+        106
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "SongGeneration_MODEL",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SongGeneration_Stage1"
+      },
+      "widgets_values": [
+        "htdemucs.pth",
+        "Auto",
+        false
+      ]
+    },
+    {
+      "id": 7,
+      "type": "PreviewAudio",
+      "pos": [
+        21859.94921875,
+        -1017.8499145507812
+      ],
+      "size": [
+        270,
+        88
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 6
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [
+      3,
+      4,
+      0,
+      5,
+      0,
+      "SongGeneration_MODEL"
+    ],
+    [
+      4,
+      5,
+      0,
+      6,
+      0,
+      "SongGeneration_DICT"
+    ],
+    [
+      5,
+      6,
+      0,
+      3,
+      0,
+      "AUDIO"
+    ],
+    [
+      6,
+      6,
+      0,
+      7,
+      0,
+      "AUDIO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.1,
+      "offset": [
+        -20789.830041820154,
+        1560.3076561213372
+      ]
+    },
+    "frontendVersion": "1.21.6"
+  },
+  "version": 0.4
+}

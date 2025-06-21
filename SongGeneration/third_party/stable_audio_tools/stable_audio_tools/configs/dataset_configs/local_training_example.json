@@ -1,0 +1,11 @@
+{
+    "dataset_type": "audio_dir",
+    "datasets": [
+        {
+            "id": "my_audio",
+            "path": "train.jsonl",
+            "custom_metadata_module": "custom_md_example.py"
+        }
+    ],
+    "random_crop": true
+}

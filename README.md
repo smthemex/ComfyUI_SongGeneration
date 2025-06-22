@@ -3,6 +3,7 @@
 
 # Tips 
 * Test env（插件测试环境）：window11，python3.11， torch2.6 ，cu124， VR12G,（transformers 4.45.1 官方原本限定小于4.44，我干掉了那个警告）
+* 0622修复config加载问题
 
 # 1. Installation
 
@@ -43,7 +44,7 @@ pip install -r requirements.txt
             |--all files  # 全部文件
 ```
 # 4 Example
-![](https://github.com/smthemex/ComfyUI_SongGeneration/blob/main/example_workflows/example.png)
+![](https://github.com/smthemex/ComfyUI_SongGeneration/blob/main/example_workflows/example1.png)
 
 # 5 Citation
 ```

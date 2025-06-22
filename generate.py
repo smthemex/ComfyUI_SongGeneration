@@ -64,7 +64,8 @@ def pre_data(Weigths_Path,dm_model_path,dm_config_path,save_dir,prompt_audio_pat
     OmegaConf.register_new_resolver("eval", lambda x: eval(x))
     OmegaConf.register_new_resolver("concat", lambda *x: [xxx for xx in x for xxx in xx])
     OmegaConf.register_new_resolver("get_fname", lambda: os.path.splitext(os.path.basename(sys.argv[1]))[0])
-    OmegaConf.register_new_resolver("load_yaml", lambda x: list(OmegaConf.load(x)))
+    curent_dir = os.path.join(folder_paths.base_path,"custom_nodes/ComfyUI_SongGeneration/SongGeneration")
+    OmegaConf.register_new_resolver("load_yaml", lambda x: list(OmegaConf.load(os.path.join(curent_dir,x))))
     np.random.seed(int(time.time()))    
     
     cfg_path = os.path.join(Weigths_Path, 'songgeneration_base_zh/config.yaml')

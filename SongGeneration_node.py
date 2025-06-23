@@ -107,7 +107,7 @@ class SongGeneration_Stage2:
 
         descriptions=description if model.get("use_descriptions") else None
 
-        items=infer_stage2(model.get("item"),model.get("cfg"),model.get("Weigths_Path"),model.get("max_duration"),lyric,descriptions,cfg_coef, temp ,top_k ,top_p ,record_tokens ,record_window )
+        items=infer_stage2(model.get("item"),model.get("cfg"),model.get("Weigths_Path"),model.get("max_duration"),lyric,descriptions,cfg_coef, temp,top_k,top_p,record_tokens ,record_window )
         gc_clear()
         return ({"item":items,"cfg":model.get("cfg"),"max_duration":model.get("max_duration"),},)
 

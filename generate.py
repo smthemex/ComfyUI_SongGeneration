@@ -61,11 +61,19 @@ class Separator():
 
 def pre_data(Weigths_Path,dm_model_path,dm_config_path,save_dir,prompt_audio_path,auto_prompt_audio_type):
     torch.backends.cudnn.enabled = False
-    OmegaConf.register_new_resolver("eval", lambda x: eval(x))
-    OmegaConf.register_new_resolver("concat", lambda *x: [xxx for xx in x for xxx in xx])
-    OmegaConf.register_new_resolver("get_fname", lambda: os.path.splitext(os.path.basename(sys.argv[1]))[0])
+    
+    # 检查解析器是否已经注册，如果没有则注册
+    if not OmegaConf.has_resolver("eval"):
+        OmegaConf.register_new_resolver("eval", lambda x: eval(x))
+    if not OmegaConf.has_resolver("concat"):
+        OmegaConf.register_new_resolver("concat", lambda *x: [xxx for xx in x for xxx in xx])
+    if not OmegaConf.has_resolver("get_fname"):
+        OmegaConf.register_new_resolver("get_fname", lambda: os.path.splitext(os.path.basename(sys.argv[1]))[0])
+    
     curent_dir = os.path.join(folder_paths.base_path,"custom_nodes/ComfyUI_SongGeneration/SongGeneration")
-    OmegaConf.register_new_resolver("load_yaml", lambda x: list(OmegaConf.load(os.path.join(curent_dir,x))))
+    
+    if not OmegaConf.has_resolver("load_yaml"):
+        OmegaConf.register_new_resolver("load_yaml", lambda x: list(OmegaConf.load(os.path.join(curent_dir,x))))
     np.random.seed(int(time.time()))    
     
     cfg_path = os.path.join(Weigths_Path, 'songgeneration_base/config.yaml')

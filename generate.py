@@ -68,7 +68,7 @@ def pre_data(Weigths_Path,dm_model_path,dm_config_path,save_dir,prompt_audio_pat
     OmegaConf.register_new_resolver("load_yaml", lambda x: list(OmegaConf.load(os.path.join(curent_dir,x))))
     np.random.seed(int(time.time()))    
     
-    cfg_path = os.path.join(Weigths_Path, 'songgeneration_base_zh/config.yaml')
+    cfg_path = os.path.join(Weigths_Path, 'songgeneration_base/config.yaml')
     
     cfg = OmegaConf.load(cfg_path)
     cfg.mode = 'inference'
@@ -98,7 +98,7 @@ def pre_data(Weigths_Path,dm_model_path,dm_config_path,save_dir,prompt_audio_pat
 
 
 def infer_stage2(item,cfg,Weigths_Path,max_duration,lyric,descriptions,cfg_coef = 1.5, temp = 0.9,top_k = 50,top_p = 0.0,record_tokens = True,record_window = 50):
-    ckpt_path = os.path.join(Weigths_Path, 'songgeneration_base_zh/model.pt')
+    ckpt_path = os.path.join(Weigths_Path, 'songgeneration_base/model.pt')
     # Define model or load pretrained model
     model_light = CodecLM_PL(cfg, ckpt_path)
     model_light = model_light.eval()

@@ -2,8 +2,9 @@
  [SongGeneration](https://github.com/tencent-ailab/SongGeneration):High-Quality Song Generation with Multi-Preference Alignment (SOTA),you can try VRAM>12G
 
 # Tips 
-* Test env（插件测试环境）：window11，python3.11， torch2.6 ，cu124， VR12G,（transformers 4.45.1 官方原本限定小于4.44，我干掉了那个警告）
+* Test env（插件测试环境）：window11，python3.11， torch2.6 ，cu124， VR12G,（transformers 4.45.1）
 * 0622修复config加载问题
+* 0623 修复无法二次推理的问题，解决omegaconf重复注册的问题
 
 # 1. Installation
 
@@ -38,7 +39,7 @@ pip install -r requirements.txt
             |--all files  # 全部文件
         |--models--lengyue233--content-vec-best/
             |--all files  # 全部文件
-        |--songgeneration_base_zh/
+        |--songgeneration_base/ #注意删掉了_zh  notice  no ‘_zh’ now
             |--all files  # 全部文件
         |--vae/
             |--all files  # 全部文件

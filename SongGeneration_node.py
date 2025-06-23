@@ -89,9 +89,9 @@ class SongGeneration_Stage2:
                 "model":  ("SongGeneration_MODEL",),
                 "lyric": ("STRING", {"multiline": True, "default": "[intro-short] ;\n [verse]\n 雪花舞动在无尽的天际.情缘如同雪花般轻轻逝去.希望与真挚.永不磨灭.你的忧虑.随风而逝 ;\n [chorus]\n 我怀抱着守护这片梦境.在这世界中寻找爱与虚幻.苦辣酸甜.我们一起品尝.在雪的光芒中.紧紧相拥 ;\n [inst-short] ;\n [verse]\n雪花再次在风中飘扬.情愿如同雪花般消失无踪.希望与真挚.永不消失.在痛苦与喧嚣中.你找到解脱 ;\n [chorus]\n 我环绕着守护这片梦境.在这世界中感受爱与虚假.苦辣酸甜.我们一起分享.在白银的光芒中.我们同在 ;\n [outro-short]"}),
                 "description": ("STRING", {"multiline": False, "default": "female, dark, pop, sad, piano and drums, the bpm is 125"}), #OPTIONAL
-                "cfg_coef": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 10.0, "step": 0.1}),
-                "temp": ("FLOAT", {"default": 0.9, "min": 0.1, "max": 1.0, "step": 0.01}),
-                "top_k": ("INT", {"default": 50, "min": 1, "max": 1000, "step": 1}),
+                "cfg_coef": ("FLOAT", {"default": 1.5, "min": 0.1, "max": 3.0, "step": 0.1}),
+                "temp": ("FLOAT", {"default": 0.9, "min": 0.1, "max": 2.0, "step": 0.1}),
+                "top_k": ("INT", {"default": 50, "min": 1, "max": 100, "step": 1}),
                 "top_p": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "record_tokens": ("BOOLEAN", {"default": True}),
                 "record_window": ("INT", {"default": 50, "min": 1, "max": 1000, "step": 1}),

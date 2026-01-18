@@ -91,6 +91,17 @@ def build_model(Weigths_Path,infer_model_path):
     audiolm = builders.get_lm_model(cfg)
     checkpoint = torch.load(infer_model_path, map_location='cpu',weights_only=False)
     audiolm_state_dict = {k.replace('audiolm.', ''): v for k, v in checkpoint.items() if k.startswith('audiolm')}
+    
+    #### @tuolaku  https://github.com/smthemex/ComfyUI_SongGeneration/issues/37 #####
+    # add 1.5 support，test。。。。
+    key = "condition_provider.conditioners.type_info.output_proj.weight"
+    expected_vocab_size = 151646
+    if key in audiolm_state_dict:
+        weight = audiolm_state_dict[key]
+        if weight.size(0) > expected_vocab_size:
+            print(f"[SongGeneration] Trimming {key} from {weight.size(0)} to {expected_vocab_size}")
+            audiolm_state_dict[key] = weight[:expected_vocab_size, :]
+    #####
     audiolm.load_state_dict(audiolm_state_dict, strict=False)
     audiolm = audiolm.eval()
     #audiolm = audiolm.cuda().to(torch.float16)

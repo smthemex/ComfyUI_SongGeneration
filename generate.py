@@ -211,50 +211,77 @@ def inference_lowram_step2(model,lyric,descriptions,item,):
     
     return item
 
+def save_with_fallback(path, tensor, sample_rate):
+
+    if tensor.ndim == 1:
+        tensor = tensor.unsqueeze(0)
+
+    tensor = tensor.detach().cpu().float().contiguous()
+
+    try:
+        import torchaudio
+        torchaudio.save(path, tensor, sample_rate)
+        return
+    except Exception as e:
+        print(f"[WARN] torchaudio.save failed, using soundfile: {e}")
+
+    try:
+        audio = tensor.numpy().astype("float32")
+        import soundfile as sf
+        sf.write(path, audio.T if audio.shape[0] < audio.shape[1] else audio, sample_rate)
+        print(f"[INFO] salvo com soundfile: {path}")
+    except Exception as e:
+        raise RuntimeError(f"Falhou soundfile.write também. Path={path}. Erro: {e}")
 
 
-def inference_lowram_final(cfg,seperate_tokenizer,max_duration,item,save_dir,save_separate):
+def inference_lowram_final(cfg, seperate_tokenizer, max_duration, item, save_dir, save_separate):
     target_wav_name = f"{save_dir}/song_audios{time.strftime('%m%d%H%S')}.flac"
 
-    model = CodecLM(name = "tmp",
-        lm = None,
-        audiotokenizer = None,
-        max_duration = max_duration,
-        seperate_tokenizer = seperate_tokenizer,
+    model = CodecLM(
+        name="tmp",
+        lm=None,
+        audiotokenizer=None,
+        max_duration=max_duration,
+        seperate_tokenizer=seperate_tokenizer,
     )
-    print("model loaded,start inference final...")
+
+    print("model loaded, start inference final...")
 
     with torch.no_grad():
-        if item["melody_is_wav"]:  
-            if save_separate :
-                wav_seperate = model.generate_audio(item['tokens'], item['pmt_wav'], item['vocal_wav'], item['bgm_wav'], chunked=True, gen_type='mixed')
+        if item["melody_is_wav"]:
+            if save_separate:
                 wav_vocal = model.generate_audio(item['tokens'], item['pmt_wav'], item['vocal_wav'], item['bgm_wav'], chunked=True, gen_type='vocal')
-                wav_bgm = model.generate_audio(item['tokens'], item['pmt_wav'], item['vocal_wav'], item['bgm_wav'], chunked=True, gen_type='bgm')
+                wav_bgm   = model.generate_audio(item['tokens'], item['pmt_wav'], item['vocal_wav'], item['bgm_wav'], chunked=True, gen_type='bgm')
+                wav_mix   = model.generate_audio(item['tokens'], item['pmt_wav'], item['vocal_wav'], item['bgm_wav'], chunked=True, gen_type='mixed')
             else:
-                if cfg.gen_type == 'mixed':
-                    wav_seperate=model.generate_audio(item['tokens'], item['pmt_wav'], item['pmt_wav'], item['bgm_wav'], chunked=True, gen_type='mixed')
-                else:
-                    wav_seperate = model.generate_audio(item['tokens'],chunked=True, gen_type=cfg.sample_rate)
+                wav_mix = model.generate_audio(item['tokens'], item['pmt_wav'], item['pmt_wav'], item['bgm_wav'], chunked=True, gen_type=cfg.gen_type)
         else:
-            if save_separate :
+            if save_separate:
                 wav_vocal = model.generate_audio(item['tokens'], chunked=True, gen_type='vocal')
-                wav_bgm = model.generate_audio(item['tokens'], chunked=True, gen_type='bgm')
-                wav_seperate = model.generate_audio(item['tokens'], chunked=True, gen_type='mixed')
+                wav_bgm   = model.generate_audio(item['tokens'], chunked=True, gen_type='bgm')
+                wav_mix   = model.generate_audio(item['tokens'], chunked=True, gen_type='mixed')
             else:
-                wav_seperate = model.generate_audio(item['tokens'], chunked=True, gen_type=cfg.gen_type)
-   
-    if save_separate :
-        torchaudio.save(f"{save_dir}/vocal_audios{time.strftime('%m%d%H%S')}.flac", wav_vocal[0].cpu().float(), cfg.sample_rate)
-        torchaudio.save(f"{save_dir}/bgm_audios{time.strftime('%m%d%H%S')}.flac", wav_bgm[0].cpu().float(), cfg.sample_rate)
+                wav_mix = model.generate_audio(item['tokens'], chunked=True, gen_type=cfg.gen_type)
 
-    torchaudio.save(target_wav_name, wav_seperate[0].cpu().float(), cfg.sample_rate)
-    # item['tokens']=None
-    # item['pmt_wav']=None
-    # item['vocal_wav']=None
-    # item['bgm_wav']=None
-    # item['melody_is_wav']=None
-    return {"waveform": wav_seperate[0].cpu().float().unsqueeze(0), "sample_rate": cfg.sample_rate}
+    def ensure_valid(name, t):
+        if t is None:
+            raise ValueError(f"{name} retornou None do modelo")
+        if not torch.is_tensor(t[0]):
+            raise ValueError(f"{name} retorno inválido: {type(t[0])}")
+        if t[0].numel() == 0:
+            raise ValueError(f"{name} retornou tensor vazio")
+        return t[0]
 
+    if save_separate:
+        save_with_fallback(f"{save_dir}/vocal_audios{time.strftime('%m%d%H%S')}.flac", ensure_valid("vocal", wav_vocal), cfg.sample_rate)
+        save_with_fallback(f"{save_dir}/bgm_audios{time.strftime('%m%d%H%S')}.flac",   ensure_valid("bgm",   wav_bgm),   cfg.sample_rate)
+
+    save_with_fallback(target_wav_name, ensure_valid("mixed", wav_mix), cfg.sample_rate)
+
+    return {
+        "waveform": ensure_valid("mixed", wav_mix).unsqueeze(0),
+        "sample_rate": cfg.sample_rate
+    }
 
 
 def song_infer_lowram(seperate_tokenizer,separator,audio_tokenizer,prompt_pt_path, save_dir,prompt_audio_path,auto_prompt_audio_type): #item dict

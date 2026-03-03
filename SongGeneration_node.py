@@ -36,6 +36,8 @@ class SongGeneration_Loader:
         return {
             "required": {
                 "infer_model": (["none"] +[i for i in folder_paths.get_filename_list("SongGeneration") if i.endswith(".pt") ],),
+                "version": (["v2","v1"],),
+                "use_flash_attn":("BOOLEAN", {"default": True}),
             },
         }
 
@@ -44,10 +46,10 @@ class SongGeneration_Loader:
     FUNCTION = "main"
     CATEGORY = "SongGeneration"
 
-    def main(self, infer_model,):
+    def main(self, infer_model,version,use_flash_attn):
         infer_model_path=folder_paths.get_full_path("SongGeneration", infer_model) if infer_model != "none" else None
         assert infer_model_path is not None ,"模型不能为空.need infer model"
-        model,cfg=build_model(os.path.join(SongGeneration_Weigths_Path, "ckpt"),infer_model_path)
+        model,cfg=build_model(os.path.join(SongGeneration_Weigths_Path, "ckpt"),infer_model_path,version,use_flash_attn)
         return (model,cfg)
 
 
@@ -66,6 +68,7 @@ class SongGeneration_Stage1:
                 "auto_prompt_audio_type": (auto_prompt_type,),
                 "model_1rvq": (["none"] + [i for i in folder_paths.get_filename_list("SongGeneration") if i.endswith(".safetensors")],),
                 "demucs_pt":  (["none"] + [i for i in folder_paths.get_filename_list("SongGeneration") if i.endswith(".pth")],),
+                "lyric": ("STRING", {"multiline": True, "default": "[intro-short] ;\n[verse]\n在那遥远的爵士乡.有位迷人的姑娘.行人经过她的窗.总为她驻足凝望.她的微笑如夜曲悠扬.温暖中带着一丝忧伤 ;\n[chorus]\n她的眼神如星闪亮.带我坠入梦境徜徉.我愿放下手中诗行.只为她轻声歌唱.日日守候在那街角.盼她一次温柔回望.我不过是远方的风.偶然路过她的乐章.却把心跳谱成了音符.在每一个夜晚反复回响;\n[inst-medium];\n[verse]\n我愿化身为那月光.静静陪在她的身旁 ;\n[bridge]\n任那晚风轻拂梦想.心事只对她默默讲.岁月是位沉默的乐手.将青涩吹奏成沧桑.我的歌谣褪了颜色.却还在老地方.为她播放 ;\n[chorus]\n在那遥远的城市一方.时光深处藏着一位好姑娘.夜色披上霓虹衣裳.迷路的人啊.都向着那扇窗凝望.那光芒.是温柔的故乡;\n[outro-medium]"}),
             },
              "optional": {
                 "audio": ("AUDIO",),
@@ -77,7 +80,7 @@ class SongGeneration_Stage1:
     FUNCTION = "main"
     CATEGORY = "SongGeneration"
 
-    def main(self,vae,seperate_model,prompt_pt, auto_prompt_audio_type,model_1rvq,demucs_pt,**kwargs):
+    def main(self,vae,seperate_model,prompt_pt, auto_prompt_audio_type,model_1rvq,demucs_pt,lyric,**kwargs):
 
         audio=kwargs.get("audio", None)
         model_sep_path=folder_paths.get_full_path("SongGeneration", seperate_model) if seperate_model != "none" else None
@@ -107,7 +110,7 @@ class SongGeneration_Stage1:
         else:
             prompt_audio_path,use_descriptions,audio_tokenizer,separator,seperate_tokenizer=None,True,None,None,None
 
-        original_item=song_infer_lowram(seperate_tokenizer,separator,audio_tokenizer,prompt_pt_path, folder_paths.get_output_directory(),prompt_audio_path,auto_prompt_audio_type,)
+        original_item=song_infer_lowram(seperate_tokenizer,separator,audio_tokenizer,prompt_pt_path, folder_paths.get_output_directory(),prompt_audio_path,auto_prompt_audio_type,lyric)
 
         gc_clear()
         print("Stage1 is done.")
@@ -124,14 +127,15 @@ class SongGeneration_Stage2:
                 "model":  ("SongGeneration_Audiolm",),
                 "cfg": ("SongGeneration_Cfg",),
                 "cond": ("SongGeneration_Cond",),
-                "lyric": ("STRING", {"multiline": True, "default": "[intro-short] ;\n [verse]\n 雪花舞动在无尽的天际.情缘如同雪花般轻轻逝去.希望与真挚.永不磨灭.你的忧虑.随风而逝 ;\n [chorus]\n 我怀抱着守护这片梦境.在这世界中寻找爱与虚幻.苦辣酸甜.我们一起品尝.在雪的光芒中.紧紧相拥 ;\n [inst-short] ;\n [verse]\n雪花再次在风中飘扬.情愿如同雪花般消失无踪.希望与真挚.永不消失.在痛苦与喧嚣中.你找到解脱 ;\n [chorus]\n 我环绕着守护这片梦境.在这世界中感受爱与虚假.苦辣酸甜.我们一起分享.在白银的光芒中.我们同在 ;\n [outro-short]"}),
-                "description": ("STRING", {"multiline": False, "default": "female, dark, pop, sad, piano and drums, the bpm is 125"}), #OPTIONAL
+                "gen_type": (["mixed","bgm","vocal",],), 
+                "description": ("STRING", {"multiline": True, "default": "jazz, piano, brass section, double bass, drum kit, confident"}), #OPTIONAL
                 "cfg_coef": ("FLOAT", {"default": 1.5, "min": 0.1, "max": 3.0, "step": 0.1}),
                 "temp": ("FLOAT", {"default": 0.9, "min": 0.1, "max": 2.0, "step": 0.1}),
-                "top_k": ("INT", {"default": 50, "min": 1, "max": 100, "step": 1}),
+                "top_k": ("INT", {"default": 50, "min": 1, "max": 10000000, "step": 1}),
                 "top_p": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "record_tokens": ("BOOLEAN", {"default": True}),
-                "record_window": ("INT", {"default": 50, "min": 1, "max": 1000, "step": 1}),                 
+                "record_window": ("INT", {"default": 50, "min": 1, "max": 1000, "step": 1}), 
+                "offload_audiolm" :("BOOLEAN", {"default": True}),               
             },
         }
 
@@ -140,11 +144,20 @@ class SongGeneration_Stage2:
     FUNCTION = "main"
     CATEGORY = "SongGeneration"
 
-    def main(self, model,cfg,cond,lyric,description,cfg_coef,temp,top_k,top_p,record_tokens,record_window):
+    def main(self, model,cfg,cond,gen_type,description,cfg_coef,temp,top_k,top_p,record_tokens,record_window,offload_audiolm):
 
-        descriptions=description if cond.get("use_descriptions",False) else None
-        
-        items=infer_stage2(cond.get("item"),model,cfg.max_dur,lyric,descriptions,cfg_coef, temp,top_k,top_p,record_tokens ,record_window )
+        lyric=cond.get("item")["gt_lyric"]
+        cfg.gen_type=gen_type
+        if cfg.version == 'v1':
+             descriptions=description.lower() if cond.get("use_descriptions",False) else None
+        else:
+            if gen_type == 'bgm':
+                descriptions = '[Musicality-very-high]' + ', ' + '[Pure-Music]' + ', ' + description.lower() if cond.get("use_descriptions",False) else '.'
+            else:
+                descriptions = description.lower() if cond.get("use_descriptions",False) else '.'
+                descriptions = '[Musicality-very-high]' + ', ' + descriptions
+
+        items=infer_stage2(cond.get("item"),model,cfg.max_dur,lyric,descriptions,gen_type,cfg,cfg_coef, temp,top_k,top_p,record_tokens ,record_window,offload_audiolm )
         gc_clear()
         return ({"items":items,"cfg":cfg,"model_sep_path":cond["model_sep_path"],"vae_model":cond["vae_model"]},)
 
@@ -159,7 +172,6 @@ class SongGeneration_Sampler:
         return {
             "required": {
                 "cond": ("SongGeneration_Cond",),
-                "gen_type": (["mixed","bgm","vocal",],), 
                 "save_separate": ("BOOLEAN", {"default": False}),
             }
             }
@@ -169,9 +181,8 @@ class SongGeneration_Sampler:
     FUNCTION = "sampler_main"
     CATEGORY = "SongGeneration"
 
-    def sampler_main(self,cond,gen_type,save_separate):
+    def sampler_main(self,cond,save_separate):
         cfg=cond.get("cfg")
-        cfg.gen_type=gen_type
         model_sep_path=cond["model_sep_path"]
         vae_model=cond["vae_model"]
         print("start inference final,loading model")

@@ -7,7 +7,7 @@ import typing as tp
 import torch.nn.functional as F
 from tqdm import tqdm
 from dataclasses import dataclass
-from ..models.levo import CausalLM, LlamaConfig
+from ..models.levo import CausalLM, LlamaConfig,BlockGPUManager
 from ..modules.streaming import StreamingModule
 from ..modules.conditioners import (
     ConditioningAttributes,
@@ -77,9 +77,9 @@ class LmModel(StreamingModule):
                  num_layers_sub: int = 12,
                  cfg = None,
                  use_flash_attn_2: bool = True,
+                 stage_offload=False,
                  **kwargs):
         super().__init__()
-
         self.cfg_coef = cfg_coef
     
         self.cfg_dropout = ClassifierFreeGuidanceDropout(p=cfg_dropout,seed=random.randint(0, 9999))
@@ -93,6 +93,7 @@ class LmModel(StreamingModule):
         self.cfg = cfg
         self.pattern_provider = pattern_provider
         self.emb = nn.ModuleList([nn.Embedding(input_emb_dim, dim)])
+        self.stage_offload=stage_offload
                 
         model_cfg = LlamaConfig(
             hidden_size=dim,
@@ -135,6 +136,7 @@ class LmModel(StreamingModule):
         if norm_first:
             self.out_norm = create_norm_fn(norm, dim)
         # enable EOS prediction
+        
         if code_depth > 1:
             self.linears = nn.ModuleList([nn.Linear(dim, self.code_size, bias=False) 
                                         for _ in range(code_depth - 1)])
@@ -145,6 +147,22 @@ class LmModel(StreamingModule):
 
         self.reset_streaming()
         
+    def to_cuda(self,device):
+        if not self.stage_offload:
+            self.to(torch.device(device))
+        else:
+            self.mlp.to(torch.device(device))
+            self.condition_provider.to(torch.device(device))
+            self.emb.to(torch.device(device))
+            self.layer2_emb.to(torch.device(device))
+            self.transformer.to(torch.device(device))
+            # self.transformer2.to(torch.device(device))
+            if self.out_norm is not None:
+                self.out_norm.to(torch.device(device))
+            if self.code_depth > 1: 
+                self.linears.to(torch.device(device))
+
+
     def _init_weights(self, weight_init: tp.Optional[str], 
                       depthwise_init: tp.Optional[str], zero_bias_init: bool):
         """Initialization of the transformer module weights.
@@ -245,7 +263,9 @@ class LmModel(StreamingModule):
         
     def forward(self, 
                 sequence: torch.Tensor,
-                condition_tensors: ConditionTensors) -> torch.Tensor:
+                condition_tensors: ConditionTensors,
+                gpu_manager= None,
+                ) -> torch.Tensor:
         """Apply language model on sequence and conditions.
         Given a tensor of sequence of shape [B, K, S] with K the number of codebooks and
         S the sequence steps, return the logits with shape [B, card, K, S].
@@ -257,19 +277,38 @@ class LmModel(StreamingModule):
         Returns:
             torch.Tensor: Logits.
         """
+       
 
         # import pdb; pdb.set_trace()
         B, K, S = sequence.shape
         assert K == self.code_depth, "Sequence shape must match the specified number of codebooks"
+        # target_device = next(self.transformer.parameters()).device
+        # if next(self.emb[0].parameters()).device != target_device:
+        #     self.emb[0].to(target_device)
         input_1 = self.emb[0](sequence[:, 0])
+        # if self.stage_offload:
+        #     self.emb[0].to(torch.device('cpu'))
+        #layer2_emb_moved = False
+        # for layer_emb in self.layer2_emb:
+        #     if next(layer_emb.parameters()).device != target_device:
+        #         layer_emb.to(target_device)
+        #         layer2_emb_moved = True
         input_2 = sum([self.layer2_emb[k](sequence[:, k]) for k in range(1, K)])
+        # if self.stage_offload and layer2_emb_moved:
+        #     for layer_emb in self.layer2_emb:
+        #         layer_emb.to(torch.device('cpu'))
         fused_input1, fused_input2 = self.fuser(input_1, input_2, condition_tensors)
+        # if self.stage_offload:
+        #     self.transformer.cuda()
         output = self.transformer(inputs_embeds=fused_input1, 
                                   use_cache=self._is_streaming, 
-                                  past_key_values=self._streaming_state.get('past_key_values_1', None))
+                                  past_key_values=self._streaming_state.get('past_key_values_1', None),gpu_manager=None)
         if self._is_streaming:
+            # past_key_values_cpu = [pkv.to('cpu') for pkv in output.past_key_values]
+            # self._streaming_state['past_key_values_1'] = past_key_values_cpu
             self._streaming_state['past_key_values_1'] = output.past_key_values
-        logits = output.logits # [B, S, card]
+            output.past_key_values=None
+        logits = output.logits
         logits = logits.unsqueeze(1) # [B, 1, S, card]
              
         # if self.out_norm:
@@ -277,13 +316,27 @@ class LmModel(StreamingModule):
         if K > 1:
             fused_input2 = torch.cat([fused_input2, output.hidden_states], dim=-1)
             fused_input2 = self.mlp(fused_input2)
+            # if self.stage_offload:
+            #     self.transformer2.cuda()
+            #     self.transformer.cpu()
+
             output2 = self.transformer2(inputs_embeds=fused_input2, 
                                            use_cache=self._is_streaming, 
-                                           past_key_values=self._streaming_state.get('past_key_values_2', None))
+                                           past_key_values=self._streaming_state.get('past_key_values_2', None),gpu_manager=gpu_manager)
+            # if self.stage_offload:
+            #     self.transformer2.cpu()
             if self._is_streaming:
+                # past_key_values_cpu = [pkv.to('cpu') for pkv in output2.past_key_values]
+                # self._streaming_state['past_key_values_2'] = past_key_values_cpu
                 self._streaming_state['past_key_values_2'] = output2.past_key_values
-            
+                output2.past_key_values=None
+            # if next(self.linears[0].parameters()).device != target_device:
+            #     for linear in self.linears:
+            #         linear.to(target_device)
             res_logits = torch.stack([self.linears[k](output2.hidden_states) for k in range(K - 1)], dim=1)  # [B, K, S, card] # [B, K, S, card]
+            # if self.stage_offload:
+            #     for linear in self.linears:
+            #         linear.to(torch.device('cpu'))
             logits = torch.cat([logits, res_logits], dim=1)  # [B, K, S, card]
         
         # remove the prefix from the model outputs
@@ -370,6 +423,11 @@ class LmModel(StreamingModule):
         Returns:
             torch.Tensor: Generated tokens.
         """
+        if self.stage_offload:
+            gpu_manager=BlockGPUManager()
+            gpu_manager.setup_for_inference(self.transformer2)
+        else:
+            gpu_manager=None
         assert not self.training, "generation shouldn't be used in training mode."
         first_param = next(iter(self.parameters()))
         device = first_param.device
@@ -387,6 +445,9 @@ class LmModel(StreamingModule):
         assert [x == possible_num_samples[0] for x in possible_num_samples], "Inconsistent inputs shapes"
         num_samples = possible_num_samples[0]
         condition_tensors = self.prepare_condition_tensors(batch_size=1, text=texts, descriptions=descriptions, audio_qt_emb=audio_qt_embs, prepare_null_condition=True)
+        if self.stage_offload:
+            self.condition_provider.to(torch.device('cpu'))
+            torch.cuda.empty_cache()
         # 3) Prepare token pool
         record_token_pool = None
         if record_tokens:
@@ -430,7 +491,8 @@ class LmModel(StreamingModule):
                     curr_sequence, condition_tensors, use_sampling, temp, top_k, top_p,
                     cfg_coef=cfg_coef, 
                     sampled_token_pool=record_token_pool[-record_window:] if record_tokens else None,
-                    ignore_tokens = ignore_tokens
+                    ignore_tokens = ignore_tokens,
+                    gpu_manager=gpu_manager,
                     )
                 # ensure the tokens that should be masked are properly set to special_token_id
                 # as the model never output special_token_id
@@ -480,7 +542,8 @@ class LmModel(StreamingModule):
                            top_p: float = 0.0,
                            cfg_coef: tp.Optional[float] = None,
                            sampled_token_pool: tp.Optional[list] = None,
-                           ignore_tokens: tp.Optional[torch.tensor] = torch.tensor([])) -> torch.Tensor:
+                           ignore_tokens: tp.Optional[torch.tensor] = torch.tensor([]),
+                           gpu_manager= None,) -> torch.Tensor:
         """Sample next token from the model given a sequence and a set of conditions. The model supports
         multiple sampling strategies (greedy sampling, softmax, top-k, top-p...).
 
@@ -505,7 +568,8 @@ class LmModel(StreamingModule):
         
         # Preparing for CFG, predicting both conditional and unconditional logits.
         sequence = torch.cat([sequence, sequence], dim=0)
-        all_logits = model(sequence, condition_tensors=condition_tensors)
+       
+        all_logits = model(sequence, condition_tensors=condition_tensors,gpu_manager=gpu_manager)  # [2B, K, T, card]
         cond_logits, uncond_logits = all_logits.split(B, dim=0)  # [B, K, T, card]
         logits = uncond_logits + (cond_logits - uncond_logits) * cfg_coef
 

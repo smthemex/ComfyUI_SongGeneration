@@ -1,0 +1,141 @@
+# ================ Train Config ================ #
+lyric_processor:
+max_dur: 270
+min_dur: 30
+prompt_len: 10
+pad_to_max: true
+
+
+# ================ Audio tokenzier ================ #
+audio_tokenizer_checkpoint: Flow1dVAE1rvq_./ckpt/model_1rvq/model_2_fixed.safetensors
+audio_tokenizer_frame_rate: 25
+audio_tokenizer_code_depth: 1
+sample_rate: 48000
+
+audio_tokenizer_checkpoint_sep: Flow1dVAESeparate_./ckpt/model_septoken/model_2.safetensors
+audio_tokenizer_frame_rate_sep: 25
+audio_tokenizer_code_depth_sep: 2
+sample_rate_sep: 48000
+
+# ================ VAE ================ #
+vae_config: ./ckpt/vae/stable_audio_1920_vae.json
+vae_model: ./ckpt/vae/autoencoder_music_1320k.ckpt
+
+# ================== LM =========================== #
+lm:
+  lm_type: Llama # [Llama]
+  dim: 2048
+  intermediate_size: 11008
+  num_heads: 16
+  num_layers: 36
+  num_layers_sub: 12
+  code_depth: 3
+  code_size: 16384
+  max_position_embeddings: 10000
+  max_position_embeddings_sub: 10000
+  rope_theta: 500000.0
+  rope_theta_sub: 500000.0
+  dropout: 0.0
+  use_flash_attn_2: true
+  activation: gelu
+  norm_first: true
+  bias_ff: false
+  bias_attn: false
+  causal: true
+  custom: false
+  memory_efficient: true
+  attention_as_float32: false
+  layer_scale: null
+  positional_embedding: sin
+  xpos: false
+  checkpointing: torch
+  weight_init: gaussian
+  depthwise_init: current
+  zero_bias_init: true
+  norm: layer_norm
+  cross_attention: false
+  qk_layer_norm: false
+  qk_layer_norm_cross: false
+  attention_dropout: null
+  kv_repeat: 1
+
+codebooks_pattern:
+  modeling: delay
+  delay:
+    delays: [ 0, 250, 250 ]
+    flatten_first: 0
+    empty_initial: 0
+
+# ================ Conditioners ===================== #
+classifier_free_guidance:
+  # drop all conditions simultaneously
+  training_dropout: 0.15
+  inference_coef: 1.5
+
+attribute_dropout:
+  # drop each condition separately
+  args:
+    active_on_eval: false
+  text:
+    description: 0.0
+    type_info: 0.2
+  audio:
+    prompt_audio: 0.5
+
+
+use_text_training: True
+fuser:
+  sum: []
+  prepend: [ description, prompt_audio, type_info ] # this order is the SAME with the input concatenation order
+
+conditioners:
+  prompt_audio:
+    model: qt_embedding
+    qt_embedding:
+      code_size: 16384
+      code_depth: 3
+      max_len: ${eval:${prompt_len}*${audio_tokenizer_frame_rate}+2} # 25*10+2+1
+  description:
+    model: QwTokenizer
+    QwTokenizer:
+      token_path: third_party/Qwen2-7B
+      max_len: 600
+      add_token_list: ${load_yaml:conf/vocab.yaml}
+  type_info:
+    model: QwTextTokenizer
+    QwTextTokenizer:
+      token_path: third_party/Qwen2-7B
+      max_len: 100
+
+offload:
+  audiolm:
+    offload_module: self
+    cpu_mem_gb: 0
+    pre_copy_step: 1
+    clean_cache_after_forward: false
+    dtype: torch.float16
+    offload_layer_dict:
+      transformer: 4
+      transformer2: 4
+    ignore_layer_list: []
+    clean_cache_wrapper:
+      module: self
+      method_name: _sample_next_token
+      diff_mem_gb_thre: 5
+    debug: false
+
+  wav_tokenizer_diffusion:
+    offload_module: self.model.model
+    pre_copy_step: 1
+    clean_cache_after_forward: false
+    cpu_mem_gb: -1
+    dtype: null
+    offload_layer_dict:
+      cfm_wrapper: 5
+      hubert: 4
+    ignore_layer_list: []
+    clean_cache_wrapper:
+      module: self.model.model.cfm_wrapper.estimator
+      method_name: forward
+      diff_mem_gb_thre: 1
+    debug: false

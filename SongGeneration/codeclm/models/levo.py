@@ -11,6 +11,49 @@ import transformers
 """
 Wrap the original Llama model for potential customized changes.
 """
+class BlockGPUManager:
+    def __init__(self, device="cuda",):
+        self.device = device
+        self.managed_modules = []
+        self.embedder_modules = []
+
+    def setup_for_inference(self, transformer_model,):
+        self._collect_managed_modules(transformer_model)
+        self._initialize_embedder_modules()
+        return self
+
+
+    def _collect_managed_modules(self, transformer_model):
+        self.managed_modules = []
+        self.embedder_modules = []
+
+        for i, layers in enumerate(transformer_model.model.layers):
+            self.managed_modules.append(layers)
+
+        if hasattr(transformer_model.model, 'norm'):#
+            self.embedder_modules.append(transformer_model.model.norm)
+        
+  
+    def _initialize_embedder_modules(self):
+        for module in self.embedder_modules:
+            if hasattr(module, 'to'):
+                module.to(self.device,)
+        return self
+
+
+    def unload_all_blocks_to_cpu(self):
+        for module in self.managed_modules:
+            if hasattr(module, 'to'):
+                module.to('cpu')
+    
+        for module in self.embedder_modules:
+            if hasattr(module, 'to'):
+                module.to('cpu')
+         
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+
 
 """main class"""
 class CausalLM(LlamaForCausalLM_base):
@@ -32,7 +75,11 @@ class CausalLM(LlamaForCausalLM_base):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
+        gpu_manager=None,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
+        if gpu_manager is not  None:
+            if next(self.lm_head.parameters()).device != gpu_manager.device:
+                self.lm_head=self.lm_head.to(gpu_manager.device)
 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -51,6 +98,7 @@ class CausalLM(LlamaForCausalLM_base):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
+            gpu_manager=gpu_manager,
         )
 
         hidden_states = outputs[0]
@@ -117,6 +165,7 @@ class LmModel(LlamaModel_base):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
+        gpu_manager=None,
     ) -> Union[Tuple, BaseModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -173,6 +222,15 @@ class LmModel(LlamaModel_base):
         next_decoder_cache = () if use_cache else None
 
         for idx, decoder_layer in enumerate(self.layers):
+            if gpu_manager is not None:
+                if idx < len(self.layers):
+                    module = gpu_manager.managed_modules[idx]
+                    if hasattr(module, 'to'):
+                        module.to(gpu_manager.device)
+                if idx > 0 and (idx - 1) < len(self.layers):
+                    prev_module = gpu_manager.managed_modules[idx - 1]
+                    if hasattr(prev_module, 'to'):
+                        prev_module.to('cpu')
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 

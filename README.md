@@ -1,7 +1,14 @@
 # ComfyUI_SongGeneration
  [SongGeneration](https://github.com/tencent-ailab/SongGeneration):High-Quality Song Generation with Multi-Preference Alignment (SOTA),you can try VRAM>12G
 
+
+
+
 # Update
+* 支持v2模型，加入transformer2的层卸载以方便12G Vram用户，需要使用新的工作流
+* support v2 model
+
+# Previous
 * 11/22 修复入参顺序颠倒的错误，修复一个找很久没找到的print，并修复其模块导入问题
 * 10/23 同步官方代码，删除fairseq库，已无安装难度； 
 * 10/21同步官方代码，精简模型加载，删除hubert模型，优化lm模型加载顺序，避免转移到显存时峰值OOM；  
@@ -27,6 +34,7 @@ pip install -r requirements.txt
 ```
 
 # 3.Model
+* 3.1.0 v2 version ckpt from [SongGeneration-v2-large](https://huggingface.co/lglg666/SongGeneration-v2-large/tree/main)  # v2 模型地址，[new_auto_prompt.pt](https://github.com/tencent-ailab/SongGeneration/blob/main/tools/new_auto_prompt.pt)  
 * 3.1.1 download  ckpt  from [tencent/SongGeneration](https://huggingface.co/tencent/SongGeneration/tree/main)   国内建议魔搭[AI-ModelScope/SongGeneration](https://www.modelscope.cn/models/AI-ModelScope/SongGeneration/files)    
 * 3.1.2  [new base](https://huggingface.co/lglg666/SongGeneration-base-new),[large ](https://huggingface.co/lglg666/SongGeneration-large),[full](https://huggingface.co/lglg666/SongGeneration-base-full)    
 * 3.1.3 new prompt,[emb](https://github.com/tencent-ailab/SongGeneration/tree/main/tools)   
@@ -37,10 +45,12 @@ pip install -r requirements.txt
     |-- htdemucs.pth #150M
     |--prompt.pt  # 3M
     |--new_prompt.pt  # 3M
+    |--new_auto_prompt.pt  # v2 version V2版本
     |--model_2.safetensors
     |--model_2_fixed.safetensors
     |--new_model.pt  # rename from model.pt #可选
     |--large_model.pt  #  rename from model.pt #可选
+    |--large_model_v2.pt  # must to rename from model.pt #必须重命名才能识别 v2版本
     |-- ckpt/  
         |--encode-s12k.pt  # 3.68G
 --  ComfyUI/models/vae/

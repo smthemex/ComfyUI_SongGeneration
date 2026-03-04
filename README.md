@@ -1,12 +1,9 @@
 # ComfyUI_SongGeneration
  [SongGeneration](https://github.com/tencent-ailab/SongGeneration):High-Quality Song Generation with Multi-Preference Alignment (SOTA),you can try VRAM>12G
 
-
-
-
 # Update
-* 支持v2模型，加入transformer2的层卸载以方便12G Vram用户，需要使用新的工作流
-* support v2 model
+* 支持v2模型，加入transformer2的层卸载以方便12G Vram用户，需要使用新的工作流,加入gguf模型支持，以加快推理速度，修复offload的bug
+* support v2 model, gguf,fix offload bugs.
 
 # Previous
 * 11/22 修复入参顺序颠倒的错误，修复一个找很久没找到的print，并修复其模块导入问题
@@ -38,7 +35,8 @@ pip install -r requirements.txt
 * 3.1.1 download  ckpt  from [tencent/SongGeneration](https://huggingface.co/tencent/SongGeneration/tree/main)   国内建议魔搭[AI-ModelScope/SongGeneration](https://www.modelscope.cn/models/AI-ModelScope/SongGeneration/files)    
 * 3.1.2  [new base](https://huggingface.co/lglg666/SongGeneration-base-new),[large ](https://huggingface.co/lglg666/SongGeneration-large),[full](https://huggingface.co/lglg666/SongGeneration-base-full)    
 * 3.1.3 new prompt,[emb](https://github.com/tencent-ailab/SongGeneration/tree/main/tools)   
-* 3.1.4 download htdemucs.pth [tencent/SongGeneration](https://huggingface.co/tencent/SongGeneration/tree/main/third_party/demucs/ckpt)  
+* 3.1.4 download htdemucs.pth [tencent/SongGeneration](https://huggingface.co/tencent/SongGeneration/tree/main/third_party/demucs/ckpt)
+* 3.1.5 gguf [smthem/SongGeneration-v2-large-gguf](https://huggingface.co/smthem/SongGeneration-v2-large-gguf) # 国内用户可以去我云盘拉取
 * 文件结构如下,修改了加载流程，原来的结构也能用：
 ```
 --  ComfyUI/models/SongGeneration/ # 24.4G all 整个文件夹的大小
@@ -51,12 +49,16 @@ pip install -r requirements.txt
     |--new_model.pt  # rename from model.pt #可选
     |--large_model.pt  #  rename from model.pt #可选
     |--large_model_v2.pt  # must to rename from model.pt #必须重命名才能识别 v2版本
+    |--large_model_v2_Q8_0.gguf  # or Q6,optional 可选
     |-- ckpt/  
         |--encode-s12k.pt  # 3.68G
 --  ComfyUI/models/vae/
-    |--autoencoder_music_1320k.ckpt  
+    |--autoencoder_music_1320k.ckpt
+--  ComfyUI/models/gguf/
+    |--large_model_v2_Q8_0.gguf  # or Q6,optional 可选
 ```
 # 4 Example
+![](https://github.com/smthemex/ComfyUI_SongGeneration/blob/main/example_workflows/SongGeneration_g.png)
 ![](https://github.com/smthemex/ComfyUI_SongGeneration/blob/main/example_workflows/SongGeneration.png)
 
 # 5 Citation

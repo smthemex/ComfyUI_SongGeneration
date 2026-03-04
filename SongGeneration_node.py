@@ -25,6 +25,10 @@ if not os.path.exists(SongGeneration_Weigths_Path):
     os.makedirs(SongGeneration_Weigths_Path)
 folder_paths.add_model_folder_path("SongGeneration", SongGeneration_Weigths_Path)
 
+weigths_gguf_current_path = os.path.join(folder_paths.models_dir, "gguf")
+if not os.path.exists(weigths_gguf_current_path):
+    os.makedirs(weigths_gguf_current_path)
+folder_paths.add_model_folder_path("gguf", weigths_gguf_current_path) #  gguf dir
 
 
 class SongGeneration_Loader:
@@ -35,9 +39,11 @@ class SongGeneration_Loader:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "infer_model": (["none"] +[i for i in folder_paths.get_filename_list("SongGeneration") if i.endswith(".pt") ],),
+                "infer_model": (["none"] +[i for i in folder_paths.get_filename_list("SongGeneration") if i.endswith(".pt") or i.endswith(".gguf") ],),
+                "gguf": (["none"] + folder_paths.get_filename_list("gguf"), ),
                 "version": (["v2","v1"],),
                 "use_flash_attn":("BOOLEAN", {"default": True}),
+                "offload_audiolm" :("BOOLEAN", {"default": True}),   
             },
         }
 
@@ -46,10 +52,12 @@ class SongGeneration_Loader:
     FUNCTION = "main"
     CATEGORY = "SongGeneration"
 
-    def main(self, infer_model,version,use_flash_attn):
-        infer_model_path=folder_paths.get_full_path("SongGeneration", infer_model) if infer_model != "none" else None
-        assert infer_model_path is not None ,"模型不能为空.need infer model"
-        model,cfg=build_model(os.path.join(SongGeneration_Weigths_Path, "ckpt"),infer_model_path,version,use_flash_attn)
+    def main(self, infer_model,gguf,version,use_flash_attn,offload_audiolm):
+        pt_path=folder_paths.get_full_path("SongGeneration", infer_model) if infer_model != "none" else None
+        gguf_path=folder_paths.get_full_path("gguf", gguf) if gguf != "none" else None
+        assert pt_path is not None or gguf_path is not None  ,"模型不能为空.need infer model"
+        infer_model_path = pt_path if pt_path is not None else gguf_path
+        model,cfg=build_model(os.path.join(SongGeneration_Weigths_Path, "ckpt"),infer_model_path,version,use_flash_attn,offload_audiolm)
         return (model,cfg)
 
 
@@ -135,7 +143,7 @@ class SongGeneration_Stage2:
                 "top_p": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "record_tokens": ("BOOLEAN", {"default": True}),
                 "record_window": ("INT", {"default": 50, "min": 1, "max": 1000, "step": 1}), 
-                "offload_audiolm" :("BOOLEAN", {"default": True}),               
+                           
             },
         }
 
@@ -144,7 +152,7 @@ class SongGeneration_Stage2:
     FUNCTION = "main"
     CATEGORY = "SongGeneration"
 
-    def main(self, model,cfg,cond,gen_type,description,cfg_coef,temp,top_k,top_p,record_tokens,record_window,offload_audiolm):
+    def main(self, model,cfg,cond,gen_type,description,cfg_coef,temp,top_k,top_p,record_tokens,record_window):
 
         lyric=cond.get("item")["gt_lyric"]
         cfg.gen_type=gen_type
@@ -157,7 +165,7 @@ class SongGeneration_Stage2:
                 descriptions = description.lower() if cond.get("use_descriptions",False) else '.'
                 descriptions = '[Musicality-very-high]' + ', ' + descriptions
 
-        items=infer_stage2(cond.get("item"),model,cfg.max_dur,lyric,descriptions,gen_type,cfg,cfg_coef, temp,top_k,top_p,record_tokens ,record_window,offload_audiolm )
+        items=infer_stage2(cond.get("item"),model,cfg.max_dur,lyric,descriptions,gen_type,cfg,cfg_coef, temp,top_k,top_p,record_tokens ,record_window,cfg.offload_audiolm )
         gc_clear()
         return ({"items":items,"cfg":cfg,"model_sep_path":cond["model_sep_path"],"vae_model":cond["vae_model"]},)
 

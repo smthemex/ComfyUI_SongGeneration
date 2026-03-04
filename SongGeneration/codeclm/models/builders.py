@@ -50,7 +50,7 @@ def get_audio_tokenizer_model_cpu(checkpoint_path: str, cfg: omegaconf.DictConfi
         return AudioTokenizer.get_pretrained(name, cfg.vae_config, cfg.vae_model, 'cpu', mode=cfg.mode, tango_device='cpu')
 
 
-def get_lm_model(cfg: omegaconf.DictConfig,version: str = 'v1'): #-> LMModel:
+def get_lm_model(cfg: omegaconf.DictConfig,version: str = 'v1',stage_offload=False): #-> LMModel:
     """Instantiate a LM."""    
     lm_kwargs = dict_from_config(getattr(cfg, 'lm'))
     
@@ -75,7 +75,7 @@ def get_lm_model(cfg: omegaconf.DictConfig,version: str = 'v1'): #-> LMModel:
     attribute_dropout = dict_from_config(getattr(cfg, 'attribute_dropout'))
     cls_free_guidance = dict_from_config(getattr(cfg, 'classifier_free_guidance'))
     cfg_prob, cfg_coef = cls_free_guidance['training_dropout'], cls_free_guidance['inference_coef']
-    stage_offload=True # if Vram < 12G,make it True
+    #stage_offload=True # if Vram < 12G,make it True
     # condition fuser
     fuser = get_condition_fuser(cfg)    
     lm_type = lm_kwargs['lm_type'] # YCY: For consistency, choose different lm.py based on lm_type

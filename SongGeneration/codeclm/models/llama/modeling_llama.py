@@ -37,18 +37,25 @@ from transformers.utils import (
     logging,
     replace_return_docstrings,
 )
+
+
 try:
     from transformers.utils import   is_flash_attn_available
+    is_flash_attn1_available=True
 except ImportError:
-    try :
-        from transformers.utils import is_flash_attn_2_available as is_flash_attn_available
-    except ImportError:
-        is_flash_attn_available = False
+    is_flash_attn1_available=False
+
+try :
+    from transformers.utils import is_flash_attn_2_available 
+    is_flash_attn2_available = True
+except ImportError:
+    is_flash_attn2_available=False
+
 
 from .configuration_llama import LlamaConfig
 
 
-if is_flash_attn_available():
+if is_flash_attn1_available or is_flash_attn2_available:
     from flash_attn import flash_attn_func, flash_attn_varlen_func
     from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa
 
@@ -601,9 +608,14 @@ class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig):
         super().__init__()
         self.hidden_size = config.hidden_size
+        # self.self_attn = (
+        #     LlamaAttention(config=config)
+        #     if not getattr(config, "_flash_attn_2_enabled", False)
+        #     else LlamaFlashAttention2(config=config)
+        # )
         self.self_attn = (
-            LlamaAttention(config=config)
-            if not getattr(config, "_flash_attn_2_enabled", False)
+            LlamaAttention(config=config) 
+            if not  is_flash_attn1_available and not is_flash_attn2_available 
             else LlamaFlashAttention2(config=config)
         )
         self.mlp = LlamaMLP(config)

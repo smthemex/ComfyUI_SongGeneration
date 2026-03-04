@@ -1,8 +1,8 @@
 {
   "id": "f7a5247b-ed1b-466d-91df-de458a19772c",
   "revision": 0,
-  "last_node_id": 29,
-  "last_link_id": 39,
+  "last_node_id": 32,
+  "last_link_id": 43,
   "nodes": [
     {
       "id": 14,
@@ -16,7 +16,7 @@
         82
       ],
       "flags": {},
-      "order": 9,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -86,7 +86,7 @@
         94.09999999999991
       ],
       "flags": {},
-      "order": 10,
+      "order": 11,
       "mode": 2,
       "inputs": [
         {
@@ -123,7 +123,7 @@
         107.79999999999995
       ],
       "flags": {},
-      "order": 12,
+      "order": 13,
       "mode": 2,
       "inputs": [
         {
@@ -139,46 +139,6 @@
       "widgets_values": []
     },
     {
-      "id": 18,
-      "type": "SongGeneration_Loader",
-      "pos": [
-        2773.638085937501,
-        220.28410949707035
-      ],
-      "size": [
-        270,
-        126
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 2,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "model",
-          "type": "SongGeneration_Audiolm",
-          "links": [
-            34
-          ]
-        },
-        {
-          "name": "cfg",
-          "type": "SongGeneration_Cfg",
-          "links": [
-            35
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "SongGeneration_Loader"
-      },
-      "widgets_values": [
-        "large_v2_model.pt",
-        "v2",
-        true
-      ]
-    },
-    {
       "id": 21,
       "type": "SongGeneration_Stage1",
       "pos": [
@@ -190,7 +150,7 @@
         347.5
       ],
       "flags": {},
-      "order": 6,
+      "order": 7,
       "mode": 2,
       "inputs": [
         {
@@ -223,46 +183,6 @@
       ]
     },
     {
-      "id": 1,
-      "type": "SongGeneration_Loader",
-      "pos": [
-        1365.8968603515636,
-        254.58254272460943
-      ],
-      "size": [
-        270,
-        126
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "model",
-          "type": "SongGeneration_Audiolm",
-          "links": [
-            29
-          ]
-        },
-        {
-          "name": "cfg",
-          "type": "SongGeneration_Cfg",
-          "links": [
-            30
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "SongGeneration_Loader"
-      },
-      "widgets_values": [
-        "large_v2_model.pt",
-        "v2",
-        true
-      ]
-    },
-    {
       "id": 23,
       "type": "Note",
       "pos": [
@@ -274,7 +194,7 @@
         185.1282958984375
       ],
       "flags": {},
-      "order": 3,
+      "order": 1,
       "mode": 0,
       "inputs": [],
       "outputs": [],
@@ -286,123 +206,18 @@
       "bgcolor": "#653"
     },
     {
-      "id": 29,
-      "type": "Note",
-      "pos": [
-        1998.789382915805,
-        590.0000638964441
-      ],
-      "size": [
-        368.75862663594353,
-        114.44628099173565
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [],
-      "properties": {},
-      "widgets_values": [
-        "offload_audiolm将降低gpu占用，当然，推理时长也自然就翻倍了\n\n显存够大的情况下，top_k=5000 否则设置为50\nif big Vram top_=5000 else 50 \n"
-      ],
-      "color": "#432",
-      "bgcolor": "#653"
-    },
-    {
-      "id": 24,
-      "type": "SongGeneration_Stage2",
-      "pos": [
-        1705.4000424685778,
-        344.45150152755116
-      ],
-      "size": [
-        258.39999999999964,
-        320
-      ],
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "SongGeneration_Audiolm",
-          "link": 29
-        },
-        {
-          "name": "cfg",
-          "type": "SongGeneration_Cfg",
-          "link": 30
-        },
-        {
-          "name": "cond",
-          "type": "SongGeneration_Cond",
-          "link": 39
-        }
-      ],
-      "outputs": [
-        {
-          "name": "cond",
-          "type": "SongGeneration_Cond",
-          "links": [
-            32
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "SongGeneration_Stage2"
-      },
-      "widgets_values": [
-        "mixed",
-        "female, dark, pop, sad, piano and drums, the bpm is 125",
-        1.5,
-        0.9,
-        50,
-        0,
-        true,
-        50,
-        true
-      ]
-    },
-    {
-      "id": 16,
-      "type": "PreviewAudio",
-      "pos": [
-        1984.6220898437502,
-        457.57100952148437
-      ],
-      "size": [
-        270,
-        88
-      ],
-      "flags": {},
-      "order": 11,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "audio",
-          "type": "AUDIO",
-          "link": 21
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "Node name for S&R": "PreviewAudio"
-      },
-      "widgets_values": []
-    },
-    {
       "id": 28,
       "type": "SongGeneration_Stage1",
       "pos": [
-        1207.1934392521302,
-        454.8515763108676
+        1235.7934392521302,
+        516.4515763108676
       ],
       "size": [
         432.06611570247924,
         419.43801652892546
       ],
       "flags": {},
-      "order": 5,
+      "order": 2,
       "mode": 0,
       "inputs": [
         {
@@ -446,18 +261,18 @@
         320
       ],
       "flags": {},
-      "order": 8,
+      "order": 9,
       "mode": 2,
       "inputs": [
         {
           "name": "model",
           "type": "SongGeneration_Audiolm",
-          "link": 34
+          "link": 42
         },
         {
           "name": "cfg",
           "type": "SongGeneration_Cfg",
-          "link": 35
+          "link": 43
         },
         {
           "name": "cond",
@@ -485,9 +300,219 @@
         50,
         0,
         true,
-        50,
+        50
+      ]
+    },
+    {
+      "id": 31,
+      "type": "SongGeneration_Loader",
+      "pos": [
+        2771.9203645755065,
+        196.66740312377726
+      ],
+      "size": [
+        270,
+        174
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 2,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "SongGeneration_Audiolm",
+          "links": [
+            42
+          ]
+        },
+        {
+          "name": "cfg",
+          "type": "SongGeneration_Cfg",
+          "links": [
+            43
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SongGeneration_Loader"
+      },
+      "widgets_values": [
+        "large_v2_model.pt",
+        "none",
+        "v2",
+        true,
         true
       ]
+    },
+    {
+      "id": 24,
+      "type": "SongGeneration_Stage2",
+      "pos": [
+        1705.4000424685778,
+        344.45150152755116
+      ],
+      "size": [
+        258.39999999999964,
+        320
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "SongGeneration_Audiolm",
+          "link": 40
+        },
+        {
+          "name": "cfg",
+          "type": "SongGeneration_Cfg",
+          "link": 41
+        },
+        {
+          "name": "cond",
+          "type": "SongGeneration_Cond",
+          "link": 39
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cond",
+          "type": "SongGeneration_Cond",
+          "links": [
+            32
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SongGeneration_Stage2"
+      },
+      "widgets_values": [
+        "mixed",
+        "male,  pop, sad, piano and drums, the bpm is 125",
+        1.5,
+        0.9,
+        50,
+        0,
+        true,
+        50
+      ]
+    },
+    {
+      "id": 29,
+      "type": "Note",
+      "pos": [
+        1998.789382915805,
+        590.0000638964441
+      ],
+      "size": [
+        290.57680845412506,
+        103.53719008264477
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "offload_audiolm将降低gpu占用，当然，推理时长也自然就翻倍了\n\n显存够大的情况下，top_k=5000 否则设置为50\nif big Vram top_=5000 else 50 \n"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 30,
+      "type": "SongGeneration_Loader",
+      "pos": [
+        1305.9981582118708,
+        257.14493766923204
+      ],
+      "size": [
+        316.36363636363626,
+        175.81818181818187
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "SongGeneration_Audiolm",
+          "links": [
+            40
+          ]
+        },
+        {
+          "name": "cfg",
+          "type": "SongGeneration_Cfg",
+          "links": [
+            41
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SongGeneration_Loader"
+      },
+      "widgets_values": [
+        "none",
+        "SongGeneration-v2-large-Q6_K.gguf",
+        "v2",
+        true,
+        false
+      ]
+    },
+    {
+      "id": 32,
+      "type": "Note",
+      "pos": [
+        1048.3348374612601,
+        318.636427532808
+      ],
+      "size": [
+        242.3949902723068,
+        102.62809917355384
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "提供Q8_0和Q6_K的gguf，用gguf时 12G以上显存 关闭卸载 12G以下看情况"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 16,
+      "type": "PreviewAudio",
+      "pos": [
+        1984.6220898437502,
+        457.57100952148437
+      ],
+      "size": [
+        270,
+        88
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 21
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": []
     }
   ],
   "links": [
@@ -516,44 +541,12 @@
       "AUDIO"
     ],
     [
-      29,
-      1,
-      0,
-      24,
-      0,
-      "SongGeneration_Audiolm"
-    ],
-    [
-      30,
-      1,
-      1,
-      24,
-      1,
-      "SongGeneration_Cfg"
-    ],
-    [
       32,
       24,
       0,
       14,
       0,
       "SongGeneration_Cond"
-    ],
-    [
-      34,
-      18,
-      0,
-      25,
-      0,
-      "SongGeneration_Audiolm"
-    ],
-    [
-      35,
-      18,
-      1,
-      25,
-      1,
-      "SongGeneration_Cfg"
     ],
     [
       36,
@@ -578,6 +571,38 @@
       24,
       2,
       "SongGeneration_Cond"
+    ],
+    [
+      40,
+      30,
+      0,
+      24,
+      0,
+      "SongGeneration_Audiolm"
+    ],
+    [
+      41,
+      30,
+      1,
+      24,
+      1,
+      "SongGeneration_Cfg"
+    ],
+    [
+      42,
+      31,
+      0,
+      25,
+      0,
+      "SongGeneration_Audiolm"
+    ],
+    [
+      43,
+      31,
+      1,
+      25,
+      1,
+      "SongGeneration_Cfg"
     ]
   ],
   "groups": [
@@ -611,10 +636,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.6209213230591553,
+      "scale": 1.2100000000000004,
       "offset": [
-        -873.1687045755074,
-        238.49820687622267
+        -940.9301425939482,
+        -168.78846139106417
       ]
     },
     "frontendVersion": "1.39.19",

@@ -444,10 +444,13 @@ class LmModel(StreamingModule):
             possible_num_samples.append(1)
         assert [x == possible_num_samples[0] for x in possible_num_samples], "Inconsistent inputs shapes"
         num_samples = possible_num_samples[0]
+        if next(self.condition_provider.parameters()).device != device:
+            self.condition_provider.to(device)
         condition_tensors = self.prepare_condition_tensors(batch_size=1, text=texts, descriptions=descriptions, audio_qt_emb=audio_qt_embs, prepare_null_condition=True)
-        if self.stage_offload:
-            self.condition_provider.to(torch.device('cpu'))
-            torch.cuda.empty_cache()
+        
+        self.condition_provider.to(torch.device('cpu'))
+        torch.cuda.empty_cache()
+
         # 3) Prepare token pool
         record_token_pool = None
         if record_tokens:
@@ -508,12 +511,16 @@ class LmModel(StreamingModule):
                     next_token, gen_sequence[..., offset:offset+1])
                 
                 # record sampled tokens in a window
+                
                 if record_tokens:
                     record_token_pool.append(next_token.squeeze())
                 if torch.all(is_end):
                     gen_sequence = gen_sequence[..., :offset+1]
+                    torch.cuda.empty_cache()
                     break
                 prev_offset = offset
+                if offset % 50 == 0:  # 每50步清理一次
+                    torch.cuda.empty_cache()
                 
         # ensure sequence has been entirely filled
         assert not (gen_sequence == unknown_token).any()
